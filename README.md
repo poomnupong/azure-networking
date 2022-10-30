@@ -1,6 +1,8 @@
 
 This repo contains notes about Azure networking patterns and use cases.
 
-# Articles
-1. [Skytap on Azure - getting started](001-skytap-registration/readme.md)
-2. [Skytap networking overview](002-skytap-networking-overview/readme.md)
+# Articles relates to Azure networking
+
+This repo contains notes related to Azure Networking. Some may include labs and exercise.
+
+1. [Skytap networking overview](001-skytap-networking-overview/readme.md)
