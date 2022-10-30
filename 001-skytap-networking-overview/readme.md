@@ -137,7 +137,7 @@ For detailed procedures please refer to Skytap help article: [Creating a custome
 3. Attach a Skytap environment to Skytap WAN
     - refer to Skytap document [Connecting an environment network to a WAN](https://help.skytap.com/wan-connecting-environments.html#additional-information)
     - at least a VM needed to be turned on for route validation
-    - come back to Skytap WAN screen. The connected environment will be listed in "Attached networks" tab. Please click "Enable" to turn on this Skytap WAN
+    - come back to Skytap WAN screen. The connected environment will be listed in "Attached networks" tab. Please click [Enable] button to turn on this Skytap WAN
 
     At this point Azure side of ExpressRoute object should list route learned from Skytap. Note that the learnt route is the [Skytap WAN - Skytap Subnet] value (10.2.29.0/24), and not subnet in Network Settings in the connected Skytap environment (10.2.29.0/27 in this case)
 
@@ -187,10 +187,10 @@ We have successfully established a routable connectivity between Azure and a Net
     az network vpn-connection create --resource-group=$RGNAME --name="hub1-scus-exrgw_to_pnlab-toskytap1-scus-exr_conn" --vnet-gateway1="hub1-scus-exrgw" --express-route-circuit2="pnlab-toskytap1-scus-exr"
     ```
 
-    VERIFY: ExpressRoute gateway will learn BGP-advertised routes from Skytap.
+    VERIFY: ExpressRoute Gateway will learn advertised routes from Skytap.
 
     ``` bash
-    # verify BGP learned route at the ExpressRoute gateway
+    # verify learned route at the ExpressRoute gateway
     # you still see 
     az network vpn-gateway list-learned-routes --resource-group=$RGNAME --name="hub1-scus-exrgw"
 
@@ -279,4 +279,3 @@ We have successfully established a routable connectivity between Azure and a Net
 - Skytap WAN object represent a point of connection between Azure ExpressRoute and networks in Skytap environments
 - Skytap advertise summarized route to Azure, this value is set in "Skytap subnet" parameter. This subnet should cover every Networks connecting to this WAN
 - Route advertisement from Skytap happens as long as there is an active environment attached to the WAN
-- As with other ExpressRoute circuits
