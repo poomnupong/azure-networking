@@ -88,7 +88,7 @@ az network express-route show --resource-group=$RGNAME --name="pnlab-toskytap1-s
 {
   "Name": "pnlab-toskytap1-scus-exr",
   "ProvisioningState": "Succeeded",
-  "serviceKey": "9d7d393d-5389-4c93-90b0-9a526bda3b7d",
+  "serviceKey": "455cfcdd-92a2-4c73-a891-75256e0e525a",
   "serviceProviderProvisioningState": "NotProvisioned"
 }
 ```
