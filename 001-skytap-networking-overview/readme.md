@@ -69,11 +69,11 @@ RGNAME="skytaplab-rg"
 HUBVNET_NAME="hub1-scus-vnet"
 
 # create resource group
-az group create --location=$REGION --resource-group $RGNAME
+az group create --location=$REGION --resource-group=$RGNAME
 
 # create ExpressRoute circuit to Skytap
-# for East US:
-az network express-route create --resource-group=$RGNAME --location="eastus" --bandwidth="50 mbps" --name="pnlab-toskytap1-eastus-exr" --provider="Skytap Prod" --peering-location="Washington DC" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"
+# for East US, use this parameters. Provided for reference.
+# az network express-route create --resource-group=$RGNAME --location="eastus" --bandwidth="50 mbps" --name="pnlab-toskytap1-eastus-exr" --provider="Skytap Prod" --peering-location="Washington DC" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"
 
 # for South Central US:
 az network express-route create --resource-group=$RGNAME --location="southcentralus" --bandwidth="50 mbps" --name="pnlab-toskytap1-scus-exr" --provider="SkytapInDC Prod" --peering-location="SouthCentralUS SAT09 Skytap" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"
@@ -83,13 +83,15 @@ Confirm provisioning state from Azure side and get service key. Note that servic
 
 ``` bash
 az network express-route show --resource-group=$RGNAME --name="pnlab-toskytap1-scus-exr" --query="{Name:name,ProvisioningState:provisioningState,serviceProviderProvisioningState:serviceProviderProvisioningState,serviceKey:serviceKey}" --output=jsonc
+```
 
-# the output should look like this
+The output should look like this
+
+``` bash
 {
   "Name": "pnlab-toskytap1-scus-exr",
   "ProvisioningState": "Succeeded",
   "serviceKey": "455cfcdd-92a2-4c73-a891-75256e0e525a",
-  "serviceProviderProvisioningState": "NotProvisioned"
 }
 ```
 
@@ -122,8 +124,11 @@ For detailed procedures please refer to Skytap help article: [Creating a custome
     ``` bash
     # query Service Provider Provisioning (Skytap side) status of the ExpressRoute
     az network express-route show --resource-group=$RGNAME --name="pnlab-toskytap1-scus-exr" --query="{Name:name,ProvisioningState:provisioningState,serviceProviderProvisioningState:serviceProviderProvisioningState,serviceKey:serviceKey}" --output=jsonc
+    ```
 
-    # output should show as "Provisioned" if the connection is successful
+    Output should show as "Provisioned" if the connection is successful
+    
+    ``` bash
     {
       "Name": "pnlab-toskytap1-scus-exr",
       "ProvisioningState": "Succeeded",
@@ -142,11 +147,12 @@ For detailed procedures please refer to Skytap help article: [Creating a custome
     At this point Azure side of ExpressRoute object should list route learned from Skytap. Note that the learnt route is the [Skytap WAN - Skytap Subnet] value (10.2.29.0/24), and not subnet in Network Settings in the connected Skytap environment (10.2.29.0/27 in this case)
 
     ``` bash
-
     # list route table of the ExpressRoute
     # output shows this ExpressRoute circuit has learned route from Skytap
     az network express-route list-route-tables --resource-group=$RGNAME --name="pnlab-toskytap1-scus-exr" --path="primary" --peering-name="AzurePrivatePeering"
+    ```
 
+    ``` bash
     # output: shows this ExpressRoute circuit has learned the prefix from our Network in Skytap Environment
     {
       "nextLink": null,
@@ -182,7 +188,22 @@ We have successfully established a routable connectivity between Azure and a Net
     az network vnet-gateway create --resource-group=$RGNAME --location=$REGION --name="hub1-scus-exrgw" --vnet=$HUBVNET_NAME --gateway-type="ExpressRoute" --sku="Standard" --public-ip-address="hub1-scus-exrgw-pip1" --no-wait
 
     # wait until ExR gateway provisioning is completed
+    echo "\n"
+    echo "#***"
+    echo "#*** polling provisionting state of hub1-scus-exrgw every 10 seconds until provisioning is completed."
+    echo "#***"
+    while [[ $prState != 'Succeeded' ]];
+    do
+        prState=$(az network vnet-gateway show --resource-group=$RGNAME --name="hub1-scus-exrgw" --query='provisioningState' -o tsv)
+        echo "hub1-scus-exrgw provisioningState = "$prState
+        sleep 10
+    done
+    echo "#*** ExpressRoute Gateway provisioning completed."
+    ```
 
+    Then proceed to connect ExpressRoute circuit to the ExpressRoute gateway.
+
+    ``` bash
     # connect ExpressRoute circuit to the gateway
     az network vpn-connection create --resource-group=$RGNAME --name="hub1-scus-exrgw_to_pnlab-toskytap1-scus-exr_conn" --vnet-gateway1="hub1-scus-exrgw" --express-route-circuit2="pnlab-toskytap1-scus-exr"
     ```
@@ -190,10 +211,12 @@ We have successfully established a routable connectivity between Azure and a Net
     VERIFY: ExpressRoute Gateway will learn advertised routes from Skytap.
 
     ``` bash
-    # verify learned route at the ExpressRoute gateway
-    # you still see 
-    az network vpn-gateway list-learned-routes --resource-group=$RGNAME --name="hub1-scus-exrgw"
+    # this command list routes that ExpressRoute gateway learned from its peers
+    az network vnet-gateway list-learned-routes --resource-group=$RGNAME --name="hub1-scus-exrgw"
+    ```
+    RESULT: Output will show learned address prefix, identical to [Skytap Subnet] configuration.
 
+    ``` bash
     # output: shows routes learned from Skytap, via ExpressRoute circuit
     {
       "value": [
@@ -209,7 +232,8 @@ We have successfully established a routable connectivity between Azure and a Net
       ]
     }
     ```
-2. Create a test VM, allow SSH access from home and verify connectivity
+    
+2. Create a test VM, allow SSH access from your public IP address and verify connectivity
 
     ``` bash
     VMSIZE="Standard_DS1_v2"
@@ -236,7 +260,7 @@ We have successfully established a routable connectivity between Azure and a Net
     az network public-ip list --resource-group $RGNAME --query="[].{name:name,ip:ipAddress}" --output=table
     ```
 
-    VERIFY: At this point you will be able to SSH into the VM and ping the VM in Skytap.
+    At this point you will be able to ping and SSH into the VM in Skytap environment
 
     ``` bash
     # from test test by ping
@@ -253,7 +277,7 @@ We have successfully established a routable connectivity between Azure and a Net
     azureuser@test1-vm:~$
     ```
 
-    VERIFY: Effective route of the VM network interface will also list the routes learned from Skytap, suggesting it can reach that subnet.
+    VERIFY: Effective routes of the Azure VM NIC will also list the routes learned from Skytap, suggesting it can reach that subnet.
 
     ``` bash
     # get object ID of the NIC of our VM
@@ -261,8 +285,10 @@ We have successfully established a routable connectivity between Azure and a Net
 
     # show effective routes of the NIC in question
     az network nic show-effective-route-table --ids=$NIC --query="value[].{Prefix:addressPrefix[0],NextHopType:nextHopType,Source:source}" --output=table
+    ```
+    RESULT: The output should show prefixes from Skytap with source from VirtualNetworkGateway, among other routes
 
-    # the output should show prefixes from Skytap with source from VirtualNetworkGateway, among other routes
+    ``` bash
     Prefix          NextHopType            Source
     --------------  ---------------------  ---------------------
     ...(snip)
@@ -279,3 +305,4 @@ We have successfully established a routable connectivity between Azure and a Net
 - Skytap WAN object represent a point of connection between Azure ExpressRoute and networks in Skytap environments
 - Skytap advertise summarized route to Azure, this value is set in "Skytap subnet" parameter. This subnet should cover every Networks connecting to this WAN
 - Route advertisement from Skytap happens as long as there is an active environment attached to the WAN
+- 
