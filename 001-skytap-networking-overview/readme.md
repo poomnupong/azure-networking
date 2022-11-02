@@ -1,6 +1,6 @@
-# Skytap on Azure networking overview
+# Skytap on Azure networking overview and basic connectivity
 
-This article summarize basic connectivity between Azure and Skytap over ExpressRoute. It complements [networking section of Skytap documentation](https://help.skytap.com/network-overview.html) and focus on connectivity components in Azure.
+This article summarize basic connectivity between Azure and Skytap over ExpressRoute with scripts to set up a test environment. It complements [networking section of Skytap documentation](https://help.skytap.com/network-overview.html) and focus on connectivity components in Azure.
 
 You can read about Skytap on Azure in [this press release](https://www.skytap.com/press-releases/skytap-on-azure-publicly-available/).
 
@@ -53,9 +53,6 @@ Each option differs where the circuit is billed and creation steps. This article
 
 This article assumes there is already an environment with a VM in Skytap. Please see refer to [this Skytap tutorial](https://help.skytap.com/getting-started.html) to create one.
 
-Summary of steps:
-
-
 ## Step 1: Create and connect ExpressRoute to Skytap
 
 First, create ExpressRoute circuit in Azure and collect [Service Key] to complete connection from Skytap side.
@@ -63,7 +60,7 @@ First, create ExpressRoute circuit in Azure and collect [Service Key] to complet
 [Provider] and [Peering Location] parameters can be found in [This Skytap help article](https://help.skytap.com/wan-create-self-managed-expressroute.html).
 
 ``` bash
-# set variables
+# set variables - apply to all steps in this article
 REGION="southcentralus"
 RGNAME="skytaplab-rg"
 HUBVNET_NAME="hub1-scus-vnet"
@@ -173,6 +170,8 @@ We have successfully established a routable connectivity between Azure and a Net
 ## Step 3: Prepare Azure components
 
 1. Create VNET, ExpressRoute Gateway and connect previously created ExpressRoute circuit to the gateway.
+    
+    TIPS: This step takes about 40 minutes to complete.
 
     ``` bash
     # create VNET and subnets
@@ -304,5 +303,4 @@ We have successfully established a routable connectivity between Azure and a Net
 
 - Skytap WAN object represent a point of connection between Azure ExpressRoute and networks in Skytap environments
 - Skytap advertise summarized route to Azure, this value is set in "Skytap subnet" parameter. This subnet should cover every Networks connecting to this WAN
-- Route advertisement from Skytap happens as long as there is an active environment attached to the WAN
-- 
+- Route advertisement from Skytap happens as long as there is an active environment (with VM turned on) attached to the WAN
