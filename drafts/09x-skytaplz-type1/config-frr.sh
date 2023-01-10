@@ -18,9 +18,9 @@ sudo systemctl enable frr --now
 sudo systemctl restart frr
 
 # configure frr
-cat << EOF > /tmp/frr-command.txt
-configure
-router bgp 65099
-write
-EOF
-sudo /usr/bin/vtysh -c /tmp/frr-command.txt
+# cat << EOF > /tmp/frr-command.txt
+# configure
+# router bgp 65099
+# write
+# EOF
+# sudo /usr/bin/vtysh -c /tmp/frr-command.txt
