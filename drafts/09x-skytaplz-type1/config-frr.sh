@@ -5,8 +5,8 @@ sudo apt-get update
 sudo apt-get upgrade -y
 
 # enable ipv4 forwarding
-sudo sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-sudo sysctl -p
+sudo /usr/bin/sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sudo /usr/sbin/sysctl -p
 
 # install frr
 sudo apt-get install frr -y
@@ -20,8 +20,7 @@ sudo systemctl restart frr
 # configure frr
 cat << EOF > /tmp/frr-command.txt
 configure
-ip route 10.2.27.192/27 10.2.27.52
 router bgp 65099
 write
 EOF
-sudo /usr/bin/vtysh -f /tmp/frr-command.txt
+sudo /usr/bin/vtysh -c /tmp/frr-command.txt
