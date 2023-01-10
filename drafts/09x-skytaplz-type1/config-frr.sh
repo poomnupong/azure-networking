@@ -18,10 +18,10 @@ sudo systemctl enable frr --now
 sudo systemctl restart frr
 
 # configure frr
-sudo bash -c 'cat << EOF > /root/frr-command.txt
+cat << EOF > /tmp/frr-command.txt
 configure
 ip route 10.2.27.192/27 10.2.27.52
 router bgp 65099
 write
-EOF'
-sudo /usr/bin/vtysh -f /root/frr-command.txt
+EOF
+sudo /usr/bin/vtysh -f /tmp/frr-command.txt
