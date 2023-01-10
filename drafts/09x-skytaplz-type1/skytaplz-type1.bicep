@@ -374,11 +374,11 @@ resource nva1linuxVMExtensions 'Microsoft.Compute/virtualMachines/extensions@202
     settings: {
       skipDos2Unix: true
       fileUris: [
-        'fileUris'
+        'https://raw.githubusercontent.com/poomnupong/azure-networking/main/drafts/09x-skytaplz-type1/config-frr.sh'
       ]
     }
     protectedSettings: {
-      commandToExecute: 'sh customScript.sh'
+      commandToExecute: 'sh config-frr.sh'
     }
   }
 }
