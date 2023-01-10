@@ -211,7 +211,7 @@ We have successfully established a routable connectivity between Azure and a Net
 
     ``` bash
     # this command list routes that ExpressRoute gateway learned from its peers
-    az network vnet-gateway list-learned-routes --resource-group=$RGNAME --name="hub1-scus-exrgw"
+    az network vnet-gateway list-learned-routes --resource-group=$RGNAME --name="hub1-scus-exrgw" --output=table
     ```
     RESULT: Output will show learned address prefix, identical to [Skytap Subnet] configuration.
 
@@ -240,7 +240,7 @@ We have successfully established a routable connectivity between Azure and a Net
     VMPASSWORD="Azure123456$"
 
     # create a small test VM
-    az vm create --resource-group $RGNAME --name="test1-vm" --image="ubuntults" --public-ip-sku="Standard" --size=$VMSIZE --location=$REGION --vnet-name=$HUBVNET_NAME --subnet="genericvm1-subn" --admin-username=$VMUSERNAME --admin-password=$VMPASSWORD --nsg "" --no-wait
+    az vm create --resource-group $RGNAME --name="azurehubtest1-vm" --image="ubuntults" --public-ip-sku="Standard" --size=$VMSIZE --location=$REGION --vnet-name=$HUBVNET_NAME --subnet="genericvm1-subn" --admin-username=$VMUSERNAME --admin-password=$VMPASSWORD --nsg "" --no-wait
 
     # set your home IP address to be added to NSG for SSH into VM
     # !! please set this variable manually if running this script in cloud shell

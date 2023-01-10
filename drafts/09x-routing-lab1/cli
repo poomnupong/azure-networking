@@ -1,0 +1,78 @@
+az group create --location=southcentralus --name="dev-routinglab1-rg"
+
+az deployment group create --resource-group="dev-routinglab1-rg" \
+--name="manual-main-deploy" \
+--mode="complete" \
+--template-file="routing-lab1.bicep" \
+--parameters REGION='southcentralus'
+
+!== with what-if
+az deployment group create --resource-group="dev-routinglab1-rg" \
+--name="manual-main-deploy" \
+--mode="complete" \
+--template-file="routing-lab1.bicep" \
+--parameters REGION='southcentralus' -w
+
+!=== usable Azure ASN: 64512-65514 and 65521-65534
+
+
+!=== ipsec-link between vgw =====
+az network vpn-connection create -n hub1_to_onprem1-conn -g dev-routinglab1-rg --vnet-gateway1 hub1-scus-vgw -l southcentralus --shared-key "Azure123456" --vnet-gateway2 onprem1-scus-vgw --enable-bgp
+az network vpn-connection create -n onprem1_to_hub1-conn -g dev-routinglab1-rg --vnet-gateway1 onprem1-scus-vgw -l southcentralus --shared-key "Azure123456" --vnet-gateway2 hub1-scus-vgw --enable-bgp
+
+az network vpn-connection create -n avs1_to_avs1nva-conn -g dev-routinglab1-rg --vnet-gateway1 avs1-scus-vgw -l southcentralus --shared-key "Azure123456" --vnet-gateway2 avs1nva-scus-vgw --enable-bgp
+az network vpn-connection create -n avs1nva_to_avs1-conn -g dev-routinglab1-rg --vnet-gateway1 avs1nva-scus-vgw -l southcentralus --shared-key "Azure123456" --vnet-gateway2 avs1-scus-vgw --enable-bgp
+
+
+!=== FRR on ubuntu
+routeServerSubnetPrefix="10.2.27.192/27" 
+bgpNvaSubnetGateway="10.2.27.49" 
+sudo ip route add $routeServerSubnetPrefix via $bgpNvaSubnetGateway dev eth1
+
+sudo apt install frr -y 
+sudo sed -i 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons 
+sudo touch /etc/frr/bgpd.conf 
+sudo chown frr /etc/frr/bgpd.conf 
+sudo chmod 640 /etc/frr/bgpd.conf 
+sudo systemctl enable frr --now 
+sudo systemctl restart frr
+sudo systemctl status frr
+
+!=== FRR config
+
+conf term 
+! 
+route-map SET-NEXT-HOP-FW permit 10 
+set ip next-hop <Firewall Private IP address> 
+exit 
+! 
+router bgp 65111 
+neighbor 10.2.27.196 remote-as 65515   
+neighbor 10.2.27.196 ebgp-multihop 2 
+neighbor 10.2.27.197 remote-as 65515  
+neighbor 10.2.27.197 ebgp-multihop 2 
+network 0.0.0.0/0 
+! 
+address-family ipv4 unicast 
+  neighbor 10.2.27.196 route-map SET-NEXT-HOP-FW out 
+  neighbor 10.2.27.197 route-map SET-NEXT-HOP-FW out 
+exit-address-family 
+! 
+exit 
+! 
+exit 
+! 
+write file 
+! 
+
+
+
+
+!=== temp - adding skytap ExR
+
+REGION="southcentralus"
+RGNAME="dev-routinglab-skytap-rg"
+az group create --location=$REGION --resource-group=$RGNAME
+az network express-route create --resource-group=$RGNAME --location="southcentralus" --bandwidth="50 mbps" --name="pnlab-toskytap1-scus-exr" --provider="SkytapInDC Prod" --peering-location="SouthCentralUS SAT09 Skytap" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"
+
+az network express-route create --resource-group=$RGNAME --location="southcentralus" --bandwidth="50 mbps" --name="pnlab-st-onprem1-scus-exr" --provider="SkytapInDC Prod" --peering-location="SouthCentralUS SAT09 Skytap" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"

@@ -1,0 +1,37 @@
+
+# create ExpressRoute - Skytap pn-nwtest1
+RGNAME="test-skytaplz-exr-rg"
+az network express-route create --resource-group=$RGNAME --location="southcentralus" --bandwidth="50 mbps" --name="st-pn-nwtest1-scus-exr" --provider="SkytapInDC Prod" --peering-location="SouthCentralUS SAT09 Skytap" --sku-tier="Standard" --sku-family="MeteredData" --allow-global-reach="True"
+
+# create ExRGW-ExR connection
+# TODO
+
+# create virtual machine for test
+RGNAME="test-skytaplz1"
+REGION="southcentralus"
+HUBVNET_NAME="skytaplz1-scus-vnet"
+GENERAL1SNET_NAME="general1-snet"
+VMSIZE="Standard_DS1_v2"
+VMUSERNAME="azureuser"
+VMPASSWORD="Azure123456$"
+
+# create a small test VM
+az vm create --resource-group $RGNAME --name="test1-vm" --image="ubuntults" --public-ip-sku="Standard" --size=$VMSIZE --location=$REGION --vnet-name=$HUBVNET_NAME --subnet=$GENERAL1SNET --admin-username=$VMUSERNAME --admin-password=$VMPASSWORD --nsg "" --no-wait
+
+# set your home IP address to be added to NSG for SSH into VM
+# !! please set this variable manually if running this script in cloud shell
+HOMEPIP=$(curl -4 ifconfig.io -s)
+
+# create network security group and note the public IP address in the output
+az network nsg create --resource-group=$RGNAME --name=$GENERAL1SNET_NAME-nsg --location=$REGION
+
+# adding home public IP to NSG for SSH access
+az network nsg rule create --resource-group=$RGNAME --nsg-name="$GENERAL1SNET_NAME-nsg" --name="allow-home-ssh" --direction="Inbound" --priority="100" --source-address-prefixes=$HOMEPIP --source-port-ranges="*" --destination-address-prefixes="*" --destination-port-ranges="22" --access="Allow" --protocol="Tcp" --description="allow inbound ssh from home"
+
+# associate NSG to the VM subnet
+TMP_SNET_ID=$(az network vnet subnet list --resource-group=$RGNAME --vnet-name=$HUBVNET_NAME --query="[?name=='general1-snet'].id" -o tsv)
+az network vnet subnet update --id=$TMP_SNET_ID --network-security-group=$GENERAL1SNET_NAME-nsg
+
+
+# grab VM public IP address and SSH into it
+az network public-ip list --resource-group $RGNAME --query="[].{name:name,ip:ipAddress}" --output=table
